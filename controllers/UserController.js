@@ -11,8 +11,8 @@ router.post("/user", async (req, res)=>{
         const userSchema = Yup.object().shape({
             name: Yup.string().required("Nome completo é obrigatório!"),
             email: Yup.string().email("Email inválido!").required("Email é obrigatório!"),
-            password: Yup.string().required("Senha é obrigatória!").min(8, "Senha muito curta!").max(20, "Senha muito longa!"),
-            repeatPassword: Yup.string()
+            password: Yup.string().required("Senha é obrigatória!").min(8, "Senha deve ter no mínimo 8 caracteres!").max(20, "Senha deve ter no máximo 20 caracteres!"),
+            repeat_password: Yup.string()
                 .oneOf([password, null], 'As senhas devem ser iguais!')
                 .required('A confirmação de senha é obrigatória'),
             type_plan: Yup.string().required("O tipo do plano é obrigatório!").oneOf(['BRONZE', 'SILVER', 'GOLD'], 'Os tipos de plano disponíveis são: "BRONZE", "SILVER" ou "GOLD"'),
@@ -28,7 +28,7 @@ router.post("/user", async (req, res)=>{
             })
         }
 
-        const passwordHash = bcrypt.hash(password, 10)
+        const passwordHash = await bcrypt.hash(password, 10)
 
         const newUser = new User({
             name,
@@ -39,7 +39,10 @@ router.post("/user", async (req, res)=>{
 
         await newUser.save()
 
-        
+        return res.status(201).send({
+            mensagem: "Usuário criado com sucesso!",
+            user_id: newUser.id
+        })
     }catch(error){
         if(error instanceof Yup.ValidationError){
             const errors = [captureErrorYup(error)]
@@ -55,3 +58,5 @@ router.post("/user", async (req, res)=>{
         }
     }
 })
+
+module.exports = router
