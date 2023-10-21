@@ -3,6 +3,7 @@ const User = require("../models/User")
 const Yup = require("yup")
 const captureErrorYup = require("../utils/captureErrorYup")
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
 
 router.post("/user", async (req, res)=>{
     try{
@@ -56,6 +57,43 @@ router.post("/user", async (req, res)=>{
                 mensagem: "Erro ao cadastrar usuário!"
             })
         }
+    }
+})
+
+router.post("/user/login", async (req, res)=>{
+    const {email, password} = req.body
+    try{
+
+        const checkEmail = await User.findOne({email})
+        const checkPass = await bcrypt.compare(password, checkEmail.password)
+
+        if(!email || !password){
+            return res.status(400).send({
+                mensagem: "Email e senha são obrigatórios!"
+            })
+        }else if(!checkEmail || !checkPass){
+            return res.status(422).send({
+                mensagem: "Email ou senha incorretos!"
+            })
+        }
+
+        const secret = process.env.SECRET
+
+        const token = jwt.sign({
+            id: checkEmail.id
+        }, secret)
+
+        return res.status(200).send({
+            mensagem: "Login efetuado com sucesso!",
+            token: token,
+            user_id: checkEmail.id
+        })
+    }catch(error){
+        console.log(error)
+
+        return res.status(500).send({
+            mensagem: "Erro ao efetuar o login!"
+        })
     }
 })
 
